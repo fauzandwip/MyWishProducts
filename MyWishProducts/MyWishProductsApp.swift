@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct MyWishProductsApp: App {
+    @StateObject private var productsVM = ProductsViewModel()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ProductsView()
+                .environmentObject(productsVM)
         }
     }
 }
