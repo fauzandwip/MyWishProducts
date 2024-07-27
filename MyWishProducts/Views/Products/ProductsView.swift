@@ -11,7 +11,6 @@ struct ProductsView: View {
     @EnvironmentObject private var productsVM: ProductsViewModel
     
     private let columns = [
-        
         GridItem(.adaptive(minimum: 150))
     ]
     var body: some View {
@@ -20,7 +19,8 @@ struct ProductsView: View {
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(productsVM.products) { product in
                         NavigationLink {
-                            ProductDetailView(product: product)
+                            ProductDetailView()
+                                .environmentObject(ProductDetailViewModel(productId: product.id, product: product))
                         } label: {
                             ProductCardView(product: product)
                         }
@@ -43,16 +43,47 @@ struct ProductCardView: View {
             AsyncImage(url: URL(string: product.thumbnail)) { image in
                 image
                     .resizable()
-                    .frame(width: 100, height: 100)
+                    .aspectRatio(contentMode: .fit)
             } placeholder: {
                 ProgressView()
             }
-            Text(product.title)
+            .frame(maxWidth: 200)
+            .frame(height: 200)
+            
+            .background(.thinMaterial)
+            .cornerRadius(20)
+            
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(product.title)
+                        .font(.headline)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text("$\(String(format: "%.2f", product.price))")
+                        .fontWeight(.bold)
+                        .font(.headline)
+                }
+                Spacer()
+                Spacer()
+                    .frame(width: 10)
+                
+                HStack(spacing: 2) {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.yellow)
+                    Text("\(String(format: "%.1f", product.rating))")
+                        .fontWeight(.medium)
+                }
+                .font(.subheadline)
+            }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(20)
-        .background(.teal)
         .cornerRadius(10)
+        .frame(maxWidth: 200)
+        .foregroundColor(.black)
+        .padding(5)
     }
 }
 
