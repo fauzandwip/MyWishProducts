@@ -15,75 +15,51 @@ struct ProductsView: View {
     ]
     var body: some View {
         NavigationView {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 20) {
-                    ForEach(productsVM.products) { product in
-                        NavigationLink {
-                            ProductDetailView()
-                                .environmentObject(ProductDetailViewModel(productId: product.id, product: product))
-                        } label: {
-                            ProductCardView(product: product)
+            VStack {
+                if let error = productsVM.error {
+                    ErrorView(error: error) {
+                        await productsVM.fetchProducts(searchBy: productsVM.searchText)
+                    }
+                } else {
+                    ScrollView {
+                        VStack {
+                            LazyVGrid(columns: columns, spacing: 15) {
+                                ForEach(productsVM.products) { product in
+                                    NavigationLink {
+                                        ProductDetailView(productId: product.id, product: product)
+                                    } label: {
+                                        ProductCardView(product: product)
+                                    }
+                                }
+                            }
+                            .padding(20)
+                            .redacted(reason: productsVM.isLoading ? .placeholder : [])
                         }
                     }
                 }
-                .padding(20)
-                .task {
-                    await productsVM.fetchProducts()
+            }
+            .searchable(text: $productsVM.searchText, placement: .navigationBarDrawer(displayMode: .always),prompt: Text("search product"))
+            .onChange(of: productsVM.searchText) { value in
+                Task {
+                    await productsVM.fetchProducts(searchBy: value)
+                }
+            }
+            .navigationTitle("Products")
+            .toolbar {
+                ToolbarItem {
+                    NavigationLink {
+                        FavoriteProductsView()
+                    } label: {
+                        Image(systemName: "heart.fill")
+                            .font(.headline)
+                            .foregroundColor(Color("Primary"))
+                    }
                 }
             }
         }
-    }
-}
-
-struct ProductCardView: View {
-    var product: Product
-    
-    var body: some View {
-        VStack {
-            AsyncImage(url: URL(string: product.thumbnail)) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } placeholder: {
-                ProgressView()
-            }
-            .frame(maxWidth: 200)
-            .frame(height: 200)
-            
-            .background(.thinMaterial)
-            .cornerRadius(20)
-            
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(product.title)
-                        .font(.headline)
-                        .fontWeight(.medium)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Text("$\(String(format: "%.2f", product.price))")
-                        .fontWeight(.bold)
-                        .font(.headline)
-                }
-                Spacer()
-                Spacer()
-                    .frame(width: 10)
-                
-                HStack(spacing: 2) {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
-                    Text("\(String(format: "%.1f", product.rating))")
-                        .fontWeight(.medium)
-                }
-                .font(.subheadline)
-            }
-            
-            Spacer()
+        .task {
+            await productsVM.fetchProducts()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .cornerRadius(10)
-        .frame(maxWidth: 200)
-        .foregroundColor(.black)
-        .padding(5)
     }
 }
 

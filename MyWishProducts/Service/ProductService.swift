@@ -13,11 +13,12 @@ struct APIBasePath {
 
 struct APIEndpoint {
     static let products = APIBasePath.BASE_PATH + "/products"
+    static let searchProducts = products + "/search?q="
 }
 
 class ProductService {
-    func fetchProducts() async throws -> [Product] {
-        guard let url = URL(string: APIEndpoint.products) else {
+    func fetchProducts(searchBy: String = "") async throws -> [Product] {
+        guard let url = URL(string: APIEndpoint.searchProducts + searchBy) else {
             throw APIError.invalidURL
         }
         
@@ -25,9 +26,6 @@ class ProductService {
         
         let decodedResponse = try JSONDecoder().decode(ProductResponseAPI.self, from: data)
         return decodedResponse.products
-//        return decodedResponse.products.map { product in
-//            Product(id: product.id, title: product.title, thumbnail: product.thumbnail, price: product.price, rating: product.rating, category: product.category, description: product.description, tags: product.tags, reviews: product.reviews, isFavoriteProduct: false)
-//        }
     }
     
     func fetchProductById(id: Int) async throws -> Product {
@@ -39,17 +37,19 @@ class ProductService {
         
         let decodedResponse = try JSONDecoder().decode(Product.self, from: data)
         return decodedResponse
-//        return Product(id: decodedResponse.id, title: decodedResponse.title, thumbnail: decodedResponse.thumbnail, price: decodedResponse.price, rating: decodedResponse.rating, category: decodedResponse.category, description: decodedResponse.category, tags: decodedResponse.tags, reviews: decodedResponse.reviews, isFavoriteProduct: false)
     }
 }
 
 enum APIError: Error {
     case invalidURL
+    case fetchError
     
     var description: String {
         switch self {
         case .invalidURL:
             return "Invalid URL"
+        case .fetchError:
+            return "Error: fetch data"
         }
     }
 }

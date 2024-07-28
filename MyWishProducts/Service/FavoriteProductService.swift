@@ -9,58 +9,55 @@ import Foundation
 import CoreData
 
 class FavoriteProductService {
-    private let container: NSPersistentContainer
     private let containerName = "FavoriteProductContainer"
-    private let entityName = "FavoriteProductEntity"
+    private let entityName = "FavoriteProduct"
     
-    init() {
-        self.container = NSPersistentContainer(name: containerName)
-        container.loadPersistentStores { _, error in
-            if let error {
-                print("Error loading core data! \(error)")
-            }
-        }
+    private static var persistentContainer: NSPersistentContainer = {
+        let container = NSPersistentContainer(name: "FavoriteProductContainer")
+                container.loadPersistentStores { _, error in
+                    if let error = error {
+                         fatalError("Unable to load persistent stores: \(error)")
+                    }
+                }
+                return container
+            }()
+        
+    var context: NSManagedObjectContext {
+        return Self.persistentContainer.viewContext
     }
     
-   func getFavoriteProducts() throws -> [FavoriteProductEntity] {
-        let request = NSFetchRequest<FavoriteProductEntity>(entityName: entityName)
-        let favoriteProducts = try container.viewContext.fetch(request)
+   func getFavoriteProducts() throws -> [FavoriteProduct] {
+        let request = NSFetchRequest<FavoriteProduct>(entityName: entityName)
+        let favoriteProducts = try context.fetch(request)
         return favoriteProducts
     }
     
-    func getFavoriteProduct(id: Int) throws -> FavoriteProductEntity? {
-        let fetchRequest: NSFetchRequest<FavoriteProductEntity> = FavoriteProductEntity.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %d", id)
-
-        let results = try container.viewContext.fetch(fetchRequest)
-        return results.first
-    }
+//    func getFavoriteProduct(id: Int) throws -> FavoriteProduct? {
+//        let fetchRequest: NSFetchRequest<FavoriteProduct> = FavoriteProduct.fetchRequest()
+//        fetchRequest.predicate = NSPredicate(format: "id == %d", id)
+//
+//        let results = try container.viewContext.fetch(fetchRequest)
+//        return results.first
+//    }
 
     
-    func addFavoriteProduct(_ product: Product) {
-        let favProduct = FavoriteProductEntity(context: container.viewContext)
+    func add(_ product: Product) {
+        let favProduct = FavoriteProduct(context: context)
         favProduct.id = Int64(product.id)
         favProduct.title = product.title
         favProduct.thumbnail = product.thumbnail
         favProduct.price = product.price
-        favProduct.rating = product.rating
         saveContext()
     }
     
-    func deleteFavoriteProduct(id: Int) {
-        do {
-            if let favProduct = try getFavoriteProduct(id: id) {
-                container.viewContext.delete(favProduct)
-            }
-            saveContext()
-        } catch {
-            print("error delete favorite product")
-        }
+    func delete(_ favProduct: FavoriteProduct) {
+        context.delete(favProduct)
+        saveContext()
     }
     
     func saveContext() {
         do {
-            try container.viewContext.save()
+            try context.save()
         } catch {
             print("Error saving context: \(error)")
         }

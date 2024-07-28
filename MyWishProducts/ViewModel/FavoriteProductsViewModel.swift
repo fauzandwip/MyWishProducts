@@ -8,26 +8,30 @@
 import Foundation
 
 class FavoriteProductsViewModel: ObservableObject {
-    @Published var favoriteProducts: [FavoriteProductEntity] = []
+    @Published var favoriteProducts: [FavoriteProduct] = []
+    @Published var isLoading = false
+    @Published var error: Error?
     
     private let favoriteProductService = FavoriteProductService()
     
     func getFavoriteProducts() {
+        isLoading = true
+        error = nil
+
         do {
-            self.favoriteProducts = try favoriteProductService.getFavoriteProducts()
-//            self.favoriteProducts = favProducts.map({ favProduct in
-//                FavoriteProduct(from: favProduct)
-//            })
+            let favProducts = try favoriteProductService.getFavoriteProducts()
+            self.favoriteProducts = favProducts
+            self.isLoading = false
         } catch {
-            print("Error get favorite products: \(error)")
+            self.error = error
+            isLoading = false
         }
     }
     
-    func deleteFavoriteProduct(id: Int) {
-//        if let favProduct = favoriteProducts.first(where: { $0.id == id }) {
-//            favoriteProductService.deleteFavoriteProduct(id)
-//        }
-        favoriteProductService.deleteFavoriteProduct(id: id)
-        self.getFavoriteProducts()
+    func deleteFavoriteProduct(favProduct: FavoriteProduct) {
+        if favoriteProducts.contains(favProduct) {
+            favoriteProductService.delete(favProduct)
+            self.getFavoriteProducts()
+        }
     }
 }

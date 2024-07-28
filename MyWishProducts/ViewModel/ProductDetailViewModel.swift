@@ -8,15 +8,21 @@
 import Foundation
 
 class ProductDetailViewModel: ObservableObject {
+    @Published var product: Product? = nil
+    @Published var productId: Int
     @Published var isFavProduct: Bool = false
+    @Published private var favoriteProducts: [FavoriteProduct] = []
+    @Published var isLoading = false
+    @Published var error: Error?
     
-    var product: Product? = nil
-    private var favoriteProducts: [FavoriteProductEntity] = []
+    var placeholder = Product(id: 1, title: "Placeholder", thumbnail: "", price: 234, rating: 5, description: "The Essence Mascara Lash Princess is a popular mascara known for its volumizing and lengthening effects. Achieve dramatic lashes with this long-lasting and cruelty-free formula.", tags: [], reviews: [])
     
     private let favoriteProductService = FavoriteProductService()
     private let productService = ProductService()
 
     init(productId: Int, product: Product?) {
+        self.productId = productId
+        
         if let product {
             self.product = product
         } else {
@@ -25,45 +31,52 @@ class ProductDetailViewModel: ObservableObject {
         
         self.getFavoriteProducts()
         self.setIsFavoritProduct(id: productId)
-//        print(self.isFavProduct, self.product?.title ?? "Title")
     }
     
-    private func fetchProductById(id: Int) {
+    func fetchProductById(id: Int) {
+        isLoading = true
+        error = nil
+        
         Task {
             do {
                 let productData = try await productService.fetchProductById(id: id)
                 DispatchQueue.main.async {
                     self.product = productData
+                    self.isLoading = false
                 }
-                print("fetch product detail vm")
             } catch {
-                print("error \(error)")
+                self.error = error
+                self.isLoading = false
             }
         }
     }
     
     func getFavoriteProducts() {
+        isLoading = true
+        error = nil
+        
         do {
-            self.favoriteProducts =  try favoriteProductService.getFavoriteProducts()
+            self.favoriteProducts = try favoriteProductService.getFavoriteProducts()
+            self.isLoading = false
         } catch {
-            print("Error get favorite products: \(error)")
+            self.error = error
+            self.isLoading = false
         }
     }
     
     func addFavoriteProduct(_ product: Product) {
-        favoriteProductService.addFavoriteProduct(product)
+        favoriteProductService.add(product)
         getFavoriteProducts()
         self.isFavProduct = true
+//        setIsFavoritProduct(id: product.id)
     }
     
     func deleteFavoriteProduct(id: Int) {
-//        if let favProduct = favoriteProducts.first(where: { $0.id == id }) {
-//            favoriteProductService.deleteFavoriteProduct(favProduct)
-//            self.isFavProduct = false
-//        }
-        favoriteProductService.deleteFavoriteProduct(id: id)
-        self.isFavProduct = false
-        print(self.isFavProduct, "delete fav")
+        if let favProduct = favoriteProducts.first(where: { $0.id == id }) {
+            favoriteProductService.delete(favProduct)
+            self.isFavProduct = false
+//            setIsFavoritProduct(id: id)
+        }
     }
     
     func favoriteButtonAction() {

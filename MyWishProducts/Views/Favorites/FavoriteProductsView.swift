@@ -15,22 +15,27 @@ struct FavoriteProductsView: View {
     ]
     
     var body: some View {
-        NavigationView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(favoriteProductsVM.favoriteProducts) { favProduct in
-                    NavigationLink {
-                        ProductDetailView()
-                            .environmentObject(ProductDetailViewModel(productId: Int(favProduct.id), product: nil))
-                    } label: {
-                        FavoriteProductCardView(product: favProduct)
-                    }
+        VStack {
+            if let error = favoriteProductsVM.error {
+                ErrorView(error: error) {
+                    favoriteProductsVM.getFavoriteProducts()
                 }
-            }
-            .padding(20)
-            .task {
-                favoriteProductsVM.getFavoriteProducts()
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 20) {
+                        ForEach(favoriteProductsVM.favoriteProducts, id: \.id) { favProduct in
+                            FavoriteProductCardView(favProduct: favProduct)
+                        }
+                    }
+                    .padding(20)
+                }
+                .redacted(reason: favoriteProductsVM.isLoading ? .placeholder : [])
             }
         }
+        .task {
+            favoriteProductsVM.getFavoriteProducts()
+        }
+        .navigationTitle("Favorites")
     }
 }
 
