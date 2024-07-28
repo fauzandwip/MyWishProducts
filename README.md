@@ -23,9 +23,9 @@
 
 # Video Demo
 
-![iPhone_gif](gif/iPhone_GIF.gif)
-
 ## iPhone
+
+![iPhone_gif](gif/iPhone_GIF.gif)
 
 # Tech Stack
 
